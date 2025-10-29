@@ -30,6 +30,7 @@ class ExpenseListView(APIView):
 
 class ExpenseDetailView(APIView):
     serializer_class = ExpenseSerializer
+    lookup_field = 'pk'
 
     def get_object(self, pk):
         try:
