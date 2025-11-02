@@ -1,8 +1,10 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     Home, ExpenseListView, ExpenseDetailView,
     CategoryList, CategoryDetail, AddCategoryToExpense, RemoveCategoryFromExpense,
-    PaymentMethodList, PaymentMethodDetail, AddPaymentMethodToExpense, RemovePaymentMethodFromExpense, ProfileDetail, update_profile
+    PaymentMethodList, PaymentMethodDetail, AddPaymentMethodToExpense, RemovePaymentMethodFromExpense, ProfileDetail, update_profile,
+    CreateUserView, LoginView, VerifyUserView
 )
 
 urlpatterns = [
@@ -19,4 +21,8 @@ urlpatterns = [
     path('expenses/<int:expense_id>/remove-pm/<int:pm_id>/', RemovePaymentMethodFromExpense.as_view(), name='remove-pm'),
     path('users/<int:user_id>/add-profile/', ProfileDetail.as_view(), name='add-profile'),
     path('users/<int:user_id>/update-profile/', update_profile, name='update-profile'),
+    path('users/signup/', CreateUserView.as_view(), name='signup'),
+    path('users/login/', LoginView.as_view(), name='login'),
+    path('users/verify/', VerifyUserView.as_view(), name='verify-user'),
+    path('users/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

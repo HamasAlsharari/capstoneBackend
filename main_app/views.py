@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status, generics, permissions
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
-from django.contrib.auth.models import User 
+from django.contrib.auth.models import User
+from rest_framework_simplejwt.tokens import RefreshToken 
 from .models import Expense, Category, PaymentMethod, Profile
 from .serializers import ExpenseSerializer, CategorySerializer, PaymentMethodSerializer, ProfileSerializer, UserSerializer
+from django.contrib.auth import authenticate
 
 
 class Home(APIView):
@@ -15,6 +17,7 @@ class Home(APIView):
 
 
 class ExpenseListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ExpenseSerializer
 
     def get(self, request):
@@ -28,7 +31,7 @@ class ExpenseListView(APIView):
     def post(self, request):
         data = request.data.copy()
         data["user"] = int(request.user.id)
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -36,6 +39,7 @@ class ExpenseListView(APIView):
 
 
 class ExpenseDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ExpenseSerializer
     lookup_field = 'pk'
 
@@ -72,11 +76,13 @@ class ExpenseDetailView(APIView):
 
 
 class CategoryList(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class CategoryDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = CategorySerializer
     lookup_field = 'category_id'
 
@@ -99,6 +105,7 @@ class CategoryDetail(APIView):
         return Response({'success': True}, status=status.HTTP_204_NO_CONTENT)
 
 class AddCategoryToExpense(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, expense_id, category_id):
         expense = get_object_or_404(Expense, id=expense_id)
         category = get_object_or_404(Category, id=category_id)
@@ -107,6 +114,7 @@ class AddCategoryToExpense(APIView):
         return Response({"categories": serializer.data}, status=status.HTTP_200_OK)
 
 class RemoveCategoryFromExpense(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, expense_id, category_id):
         expense = get_object_or_404(Expense, id=expense_id)
         category = get_object_or_404(Category, id=category_id)
@@ -115,10 +123,12 @@ class RemoveCategoryFromExpense(APIView):
         return Response({"categories": serializer.data}, status=status.HTTP_200_OK)
 
 class PaymentMethodList(generics.ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = PaymentMethodSerializer
     queryset = PaymentMethod.objects.all()
 
 class PaymentMethodDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = PaymentMethodSerializer
 
     def get(self, request, pm_id):
@@ -139,6 +149,7 @@ class PaymentMethodDetail(APIView):
         return Response({'success': True})
         
 class AddPaymentMethodToExpense(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, expense_id, pm_id):
         expense = get_object_or_404(Expense, id=expense_id)
         pm = get_object_or_404(PaymentMethod, id=pm_id)
@@ -146,6 +157,7 @@ class AddPaymentMethodToExpense(APIView):
         return Response({'success': True})
 
 class RemovePaymentMethodFromExpense(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     def post(self, request, expense_id, pm_id):
         expense = get_object_or_404(Expense, id=expense_id)
         pm = get_object_or_404(PaymentMethod, id=pm_id)
@@ -153,6 +165,7 @@ class RemovePaymentMethodFromExpense(APIView):
         return Response({'success': True})
 
 class ProfileDetail(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProfileSerializer
 
     def post(self, request, user_id):
@@ -183,3 +196,52 @@ def update_profile(request, user_id):
         user = get_object_or_404(User, id=user_id)
         return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CreateUserView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.serializer_class(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            data = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': UserSerializer(user).data
+            }
+            return Response(data, status=status.HTTP_201_CREATED)
+        except Exception as err:
+            return Response({'error': str(err)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class LoginView(APIView):
+    def post(self, request):
+        username = request.data.get("username")
+        password = request.data.get("password")
+        user = authenticate(username=username, password=password)
+
+        if user:
+            refresh = RefreshToken.for_user(user)
+            data = {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "user": UserSerializer(user).data
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+class VerifyUserView(APIView):
+  permission_classes = [permissions.IsAuthenticated]
+
+  def get(self, request):
+    try:
+      user = User.objects.get(username=request.user.username)
+      try:
+        refresh = RefreshToken.for_user(user)
+        return Response({'refresh': str(refresh),'access': str(refresh.access_token),'user': UserSerializer(user).data}, status=status.HTTP_200_OK)
+      except Exception as token_error:
+        return Response({"detail": "Failed to generate token.", "error": str(token_error)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as err:
+      return Response({"detail": "Unexpected error occurred.", "error": str(err)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
