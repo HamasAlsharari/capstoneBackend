@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     Home, ExpenseListView, ExpenseDetailView,
     CategoryList, CategoryDetail, AddCategoryToExpense, RemoveCategoryFromExpense,
-    PaymentMethodList, PaymentMethodDetail, AddPaymentMethodToExpense, RemovePaymentMethodFromExpense
+    PaymentMethodList, PaymentMethodDetail, AddPaymentMethodToExpense, RemovePaymentMethodFromExpense, ProfileDetail, update_profile
 )
 
 urlpatterns = [
@@ -17,4 +17,6 @@ urlpatterns = [
     path('payment-methods/<int:pm_id>/', PaymentMethodDetail.as_view(), name='pm-detail'),
     path('expenses/<int:expense_id>/add-pm/<int:pm_id>/', AddPaymentMethodToExpense.as_view(), name='add-pm'),
     path('expenses/<int:expense_id>/remove-pm/<int:pm_id>/', RemovePaymentMethodFromExpense.as_view(), name='remove-pm'),
+    path('users/<int:user_id>/add-profile/', ProfileDetail.as_view(), name='add-profile'),
+    path('users/<int:user_id>/update-profile/', update_profile, name='update-profile'),
 ]

@@ -25,3 +25,13 @@ class PaymentMethod(models.Model):
     name = models.CharField(max_length=50)
     type = models.CharField(max_length=20)
     last_four = models.CharField(max_length=4)
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    full_name = models.CharField(max_length=100)
+    currency = models.CharField(max_length=10)
+    monthly_budget = models.DecimalField(max_digits=10, decimal_places=2)
+    image_url = models.URLField(blank=True, null=True)
+
+    def _str_(self):
+        return self.full_name

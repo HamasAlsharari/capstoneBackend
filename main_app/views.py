@@ -2,8 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
 from django.shortcuts import get_object_or_404
-from .models import Expense, Category, PaymentMethod
-from .serializers import ExpenseSerializer, CategorySerializer, PaymentMethodSerializer
+from rest_framework.decorators import api_view
+from django.contrib.auth.models import User 
+from .models import Expense, Category, PaymentMethod, Profile
+from .serializers import ExpenseSerializer, CategorySerializer, PaymentMethodSerializer, ProfileSerializer, UserSerializer
 
 
 class Home(APIView):
@@ -24,6 +26,8 @@ class ExpenseListView(APIView):
             return Response({'error': str(err)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
+        data = request.data.copy()
+        data["user"] = int(request.user.id)
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -147,3 +151,35 @@ class RemovePaymentMethodFromExpense(APIView):
         pm = get_object_or_404(PaymentMethod, id=pm_id)
         expense.payment_methods.remove(pm)
         return Response({'success': True})
+
+class ProfileDetail(APIView):
+    serializer_class = ProfileSerializer
+
+    def post(self, request, user_id):
+        data = request.data.copy()
+        data["user"] = int(user_id)
+
+        existing_profile = Profile.objects.filter(user=user_id)
+        if existing_profile.exists():
+            existing_profile.delete()
+
+        serializer = self.serializer_class(data=data)
+        if serializer.is_valid():
+            user = get_object_or_404(User, id=user_id)
+            serializer.save()
+            return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def update_profile(request, user_id):
+    try:
+        profile = Profile.objects.get(user_id=user_id)
+    except Profile.DoesNotExist:
+        return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = ProfileSerializer(profile, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        user = get_object_or_404(User, id=user_id)
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
