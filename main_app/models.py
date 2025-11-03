@@ -18,13 +18,16 @@ class Category(models.Model):
     icon = models.CharField(max_length=50, blank=True, null=True) 
     color = models.CharField(max_length=20, default="#16a34a")
 
-    def _str_(self):
+    def __str__(self):
         return self.name
 
 class PaymentMethod(models.Model):
     name = models.CharField(max_length=50)
     type = models.CharField(max_length=20)
     last_four = models.CharField(max_length=4)
+
+    def __str__(self):
+        return self.name
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
@@ -33,5 +36,5 @@ class Profile(models.Model):
     monthly_budget = models.DecimalField(max_digits=10, decimal_places=2)
     image_url = models.URLField(blank=True, null=True)
 
-    def _str_(self):
+    def __str__(self):
         return self.full_name
