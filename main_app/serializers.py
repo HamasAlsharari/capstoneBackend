@@ -4,7 +4,6 @@ from .models import Expense, Category, PaymentMethod, Profile
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = Profile
         fields = '__all__'

@@ -165,21 +165,22 @@ class RemovePaymentMethodFromExpense(APIView):
         return Response({'success': True})
 
 class ProfileDetail(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = ProfileSerializer
 
     def post(self, request, user_id):
         data = request.data.copy()
         data["user"] = int(user_id)
 
-        existing_profile = Profile.objects.filter(user=user_id)
-        if existing_profile.exists():
-            existing_profile.delete()
-
-        serializer = self.serializer_class(data=data)
+        existing_profile = Profile.objects.filter(user=user_id).first()
+        
+        if existing_profile:
+            serializer = self.serializer_class(existing_profile, data=data)
+        else:
+            serializer = self.serializer_class(data=data)
+            
         if serializer.is_valid():
-            user = get_object_or_404(User, id=user_id)
             serializer.save()
+            user = get_object_or_404(User, id=user_id)
             return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
