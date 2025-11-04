@@ -1,4 +1,55 @@
-## Backend API Endpoints
+# Project & Repository Description
+
+ExpenseTracker is a web app that helps users manage their personal finances. 
+Users can track expenses, categorize them, and manage payment methods. 
+The app includes authentication, a clean UI, and full CRUD for expenses, categories, and payment methods.
+
+# Tech Stack
+
+- Python
+- Django
+- Django REST Framework
+- PostgreSQL
+- Docker
+
+# Frontend Repository Link
+
+https://github.com/HamasAlsharari/capstoneFrontend
+
+# Backend Site
+
+http://localhost:8000/
+
+# Installation Instructions
+
+## Using Docker
+1. Make sure Docker is installed and running on your machine.
+2. Navigate to the backend project directory:
+   ```bash
+   cd capstoneBackend
+3. Build and start the container:
+   docker compose up --build
+4. Access the backend API at: http://localhost:8000
+
+Without Docker (Optional)
+1. Navigate to the backend project directory:
+   cd capstoneBackend
+2. Create a virtual environment and activate it:
+   python -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   venv\Scripts\activate     # Windows
+3. Install dependencies:
+    pip install -r requirements.txt
+4. Apply migrations and start the server:
+    python manage.py makemigrations
+    python manage.py migrate
+    python manage.py runserver
+5. Access the backend API at: http://localhost:8000
+
+# ERD Diagram
+<img src="ERD.png" alt="ERD Diagram">
+
+## Routing Table / API Endpoints
 
 ### Authentication
 | Method | Endpoint | Description |
@@ -42,4 +93,8 @@
 | PUT | /api/profile/ | Update profile |
 
 
-<img src="ERD.png">
+# IceBox Features / Future Features
+- Add email notifications for account activity.
+- Implement analytics dashboard for expenses.
+- Integrate third-party payment gateways.
+- Add role-based access control for admin users.
